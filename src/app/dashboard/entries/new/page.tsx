@@ -32,7 +32,10 @@ export default function NewEntryPage() {
       .then((data: User[]) => {
         const filtered = data.filter((u) => (u as unknown as { role: string }).role !== "ADMIN");
         setUsers(filtered);
-        setAssignedUserIds(filtered.map((u) => u.id));
+        const autoSelected = filtered
+          .filter((u) => (u as unknown as { role: string }).role === "USER")
+          .map((u) => u.id);
+        setAssignedUserIds(autoSelected);
       })
       .catch(() => {});
   }, []);
