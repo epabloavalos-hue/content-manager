@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { DEPARTMENTS } from "@/lib/constants";
 import { useDestinationAreas, invalidateAreasCache, type DestinationArea } from "@/lib/useDestinationAreas";
+import { invalidateCategoriesCache } from "@/lib/useEventCategories";
 
 type Tab = "perfil" | "usuarios" | "categorias" | "areas";
 
@@ -124,7 +125,7 @@ export default function ProfilePage() {
 
   const fetchCategories = useCallback(async () => {
     const res = await fetch("/api/admin/categories");
-    if (res.ok) setCategories(await res.json());
+    if (res.ok) { setCategories(await res.json()); invalidateCategoriesCache(); }
   }, []);
 
   const fetchDepartments = useCallback(async () => {

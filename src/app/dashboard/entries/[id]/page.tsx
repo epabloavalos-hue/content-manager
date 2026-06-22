@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, use } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { EVENT_TYPES } from "@/lib/constants";
+import { useEventCategories } from "@/lib/useEventCategories";
 import { useDestinationAreas } from "@/lib/useDestinationAreas";
 
 interface Entry {
@@ -41,6 +41,7 @@ export default function EntryDetailPage({ params }: { params: Promise<{ id: stri
   const [settingStatus, setSettingStatus] = useState(false);
   const userId = (session?.user as { id?: string })?.id;
   const { areas: destAreas, areaLabel, areaContact } = useDestinationAreas();
+  const { categoryLabel } = useEventCategories();
 
   const fetchEntry = useCallback(async () => {
     const [entryRes, notifRes] = await Promise.all([
@@ -130,7 +131,7 @@ export default function EntryDetailPage({ params }: { params: Promise<{ id: stri
   if (loading) return <div className="py-20 text-center text-gray-500">Cargando...</div>;
   if (!entry) return null;
 
-  const eventLabel = EVENT_TYPES.find((e) => e.value === entry.eventType)?.label ?? entry.eventType;
+  const eventLabel = categoryLabel(entry.eventType);
   const areas = entry.destinationArea.split(",").filter(Boolean);
   const allAcked = ackStats.totalExpected > 0 && ackStats.ackCount >= ackStats.totalExpected;
 

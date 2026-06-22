@@ -1,4 +1,4 @@
-import { EVENT_TYPES, LINK_TYPES } from "@/lib/constants";
+import { LINK_TYPES } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
 
 interface EntryData {
@@ -31,7 +31,10 @@ export async function notifyNewEntry(entry: EntryData): Promise<void> {
     return;
   }
 
-  const dbAreas = await prisma.appDestinationArea.findMany();
+  const [dbAreas, dbCategories] = await Promise.all([
+    prisma.appDestinationArea.findMany(),
+    prisma.eventCategory.findMany(),
+  ]);
   const areaLabel = (v: string) => dbAreas.find(a => a.value === v)?.label ?? v;
   const areaContact = (v: string) => dbAreas.find(a => a.value === v)?.contact ?? "";
 
@@ -45,7 +48,7 @@ export async function notifyNewEntry(entry: EntryData): Promise<void> {
     ``,
     `<b>${entry.eventName}</b>`,
     ``,
-    `🎬 <b>Tipo:</b> ${label(EVENT_TYPES, entry.eventType)}`,
+    `🎬 <b>Tipo:</b> ${dbCategories.find(c => c.value === entry.eventType)?.label ?? entry.eventType}`,
     `🔗 <b>Enlace:</b> ${label(LINK_TYPES, entry.linkType)}`,
     `📅 <b>Fecha de grabación:</b> ${formatDate(entry.recordingDate)}`,
     `👤 <b>Responsable de contenido:</b> ${entry.contentResponsible}`,

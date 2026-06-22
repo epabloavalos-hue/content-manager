@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { EVENT_TYPES } from "@/lib/constants";
+import { useEventCategories } from "@/lib/useEventCategories";
 import { useDestinationAreas } from "@/lib/useDestinationAreas";
 
 interface Entry {
@@ -18,12 +18,12 @@ interface Entry {
   createdBy: { name: string };
 }
 
-const eventTypeLabel = (v: string) => EVENT_TYPES.find((e) => e.value === v)?.label ?? v;
 
 export default function DashboardPage() {
   const { data: session } = useSession();
   const role = (session?.user as { role?: string })?.role;
   const { areas: destAreas, areaLabel: destLabel } = useDestinationAreas();
+  const { categories: eventCategories, categoryLabel: eventTypeLabel } = useEventCategories();
   const destinationLabel = (v: string) => {
     const parts = v.split(",").filter(Boolean);
     if (parts.length === 0) return "—";
@@ -109,7 +109,7 @@ export default function DashboardPage() {
             className="bg-[#162216] border border-[#1f3320] text-sm text-white rounded-xl px-3 py-2.5 focus:outline-none focus:border-[var(--brand)] transition-colors"
           >
             <option value="ALL">Todos los tipos</option>
-            {EVENT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+            {eventCategories.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
 
           <select

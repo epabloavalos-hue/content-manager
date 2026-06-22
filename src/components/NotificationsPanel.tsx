@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { EVENT_TYPES, DEPARTMENTS } from "@/lib/constants";
+import { DEPARTMENTS } from "@/lib/constants";
+import { useEventCategories } from "@/lib/useEventCategories";
 import { useDestinationAreas } from "@/lib/useDestinationAreas";
 
 interface Entry {
@@ -58,7 +59,7 @@ export default function NotificationsPanel({ open, onClose, onCountChange, isAdm
   const [tab, setTab] = useState<"entries" | "pending">("entries");
 
   const { areaLabel: destLabel, areaContact: destContact } = useDestinationAreas();
-  const eventLabel = (v: string) => EVENT_TYPES.find((e) => e.value === v)?.label ?? v;
+  const { categoryLabel: eventLabel } = useEventCategories();
   const deptLabel = (v: string | null) => v ? (DEPARTMENTS.find((d) => d.value === v)?.label ?? v) : "—";
 
   const fetchAndCount = useCallback(async () => {

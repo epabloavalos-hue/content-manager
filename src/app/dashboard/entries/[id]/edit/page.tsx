@@ -4,7 +4,8 @@ import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { EVENT_TYPES, LINK_TYPES } from "@/lib/constants";
+import { LINK_TYPES } from "@/lib/constants";
+import { useEventCategories } from "@/lib/useEventCategories";
 import DestinationAreaPicker from "@/components/DestinationAreaPicker";
 import UserPicker from "@/components/UserPicker";
 
@@ -22,6 +23,7 @@ export default function EditEntryPage({ params }: { params: Promise<{ id: string
   const router = useRouter();
   const { data: session } = useSession();
   const role = (session?.user as { role?: string })?.role;
+  const { categories: eventCategories } = useEventCategories();
 
   const [form, setForm] = useState({
     driveLink: "", linkType: "FOLDER", eventName: "", eventType: "",
@@ -107,7 +109,7 @@ export default function EditEntryPage({ params }: { params: Promise<{ id: string
 
           <div><label className={labelCls}>Tipo de evento *</label>
             <select value={form.eventType} onChange={(e) => set("eventType", e.target.value)} className={selectCls}>
-              {EVENT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+              {eventCategories.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select></div>
 
           <div><label className={labelCls}>Fecha de grabación *</label>

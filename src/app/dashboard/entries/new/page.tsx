@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { EVENT_TYPES, LINK_TYPES } from "@/lib/constants";
+import { LINK_TYPES } from "@/lib/constants";
+import { useEventCategories } from "@/lib/useEventCategories";
 import DestinationAreaPicker from "@/components/DestinationAreaPicker";
 import UserPicker from "@/components/UserPicker";
 
@@ -13,6 +14,7 @@ export default function NewEntryPage() {
   const router = useRouter();
   const { data: session } = useSession();
   const role = (session?.user as { role?: string })?.role;
+  const { categories: eventCategories } = useEventCategories();
 
   const [form, setForm] = useState({
     driveLink: "", linkType: "FOLDER", eventName: "", eventType: "",
@@ -101,7 +103,7 @@ export default function NewEntryPage() {
             <label className={labelCls}>Tipo de evento *</label>
             <select value={form.eventType} onChange={(e) => set("eventType", e.target.value)} className={selectCls}>
               <option value="">Seleccionar tipo...</option>
-              {EVENT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+              {eventCategories.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
           </div>
 
