@@ -1,6 +1,6 @@
 "use client";
 
-import { DESTINATION_AREAS } from "@/lib/constants";
+import { useDestinationAreas } from "@/lib/useDestinationAreas";
 
 interface Props {
   selected: string[];
@@ -8,6 +8,8 @@ interface Props {
 }
 
 export default function DestinationAreaPicker({ selected, onChange }: Props) {
+  const { areas } = useDestinationAreas();
+
   function toggle(value: string) {
     if (selected.includes(value)) {
       onChange(selected.filter((v) => v !== value));
@@ -18,7 +20,7 @@ export default function DestinationAreaPicker({ selected, onChange }: Props) {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-      {DESTINATION_AREAS.map((area) => {
+      {areas.map((area) => {
         const active = selected.includes(area.value);
         return (
           <button

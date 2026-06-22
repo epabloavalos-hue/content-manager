@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { DESTINATION_AREAS } from "@/lib/constants";
+import { useDestinationAreas } from "@/lib/useDestinationAreas";
 
 interface HistoryEntry {
   id: string;
@@ -15,11 +15,10 @@ interface HistoryEntry {
   userStatuses: { userId: string; status: string; editProgress: number; user: { role: string } }[];
 }
 
-const areaLabel = (v: string) => DESTINATION_AREAS.find((d) => d.value === v)?.label ?? v;
-
 export default function HistorialPage() {
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const { areaLabel } = useDestinationAreas();
 
   useEffect(() => {
     fetch("/api/admin/history")

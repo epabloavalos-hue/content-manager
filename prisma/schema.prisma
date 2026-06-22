@@ -109,3 +109,11 @@ model AppDepartment {
   label String
   order Int    @default(0)
 }
+
+model AppDestinationArea {
+  id      String @id @default(cuid())
+  value   String @unique
+  label   String
+  contact String @default("")
+  order   Int    @default(0)
+}

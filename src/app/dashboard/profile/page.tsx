@@ -3,9 +3,10 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
-import { DEPARTMENTS, DESTINATION_AREAS } from "@/lib/constants";
+import { DEPARTMENTS } from "@/lib/constants";
+import { useDestinationAreas, invalidateAreasCache, type DestinationArea } from "@/lib/useDestinationAreas";
 
-type Tab = "perfil" | "usuarios" | "categorias" | "departamentos";
+type Tab = "perfil" | "usuarios" | "categorias" | "departamentos" | "areas";
 
 interface UserData {
   id: string; name: string; email: string; role: string; status: string;
@@ -79,6 +80,18 @@ export default function ProfilePage() {
   const [editingDeptId, setEditingDeptId] = useState<string | null>(null);
   const [editingDeptLabel, setEditingDeptLabel] = useState("");
 
+  // — Destination Areas
+  const { areas: destAreas } = useDestinationAreas();
+  const [localDestAreas, setLocalDestAreas] = useState<DestinationArea[]>([]);
+  const [newAreaLabel, setNewAreaLabel] = useState("");
+  const [newAreaContact, setNewAreaContact] = useState("");
+  const [areaMsg, setAreaMsg] = useState("");
+  const [editingAreaId, setEditingAreaId] = useState<string | null>(null);
+  const [editingAreaLabel, setEditingAreaLabel] = useState("");
+  const [editingAreaContact, setEditingAreaContact] = useState("");
+  const dragAreaIdx = useRef<number | null>(null);
+  const [dragOverAreaIdx, setDragOverAreaIdx] = useState<number | null>(null);
+
   // — History
   const [history, setHistory] = useState<HistoryEntry[]>([]);
 
@@ -128,6 +141,8 @@ export default function ProfilePage() {
   useEffect(() => { if (tab === "usuarios") fetchUsers(); }, [tab, fetchUsers]);
   useEffect(() => { if (tab === "categorias") fetchCategories(); }, [tab, fetchCategories]);
   useEffect(() => { if (tab === "departamentos") fetchDepartments(); }, [tab, fetchDepartments]);
+  useEffect(() => { if (tab === "areas") fetchAreas(); }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setLocalDestAreas(destAreas); }, [destAreas]);
 
   async function saveProfile() {
     if (!me) return;
@@ -278,12 +293,52 @@ export default function ProfilePage() {
     fetchDepartments();
   }
 
+  // — Destination Area functions
+  async function fetchAreas() {
+    const res = await fetch("/api/admin/destination-areas");
+    if (res.ok) { const data = await res.json(); setLocalDestAreas(data); invalidateAreasCache(); }
+  }
+
+  async function addArea() {
+    if (!newAreaLabel.trim()) return;
+    setAreaMsg("");
+    const res = await fetch("/api/admin/destination-areas", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ label: newAreaLabel, contact: newAreaContact }) });
+    const data = await res.json();
+    if (res.ok) { setNewAreaLabel(""); setNewAreaContact(""); fetchAreas(); } else setAreaMsg(data.error);
+  }
+
+  async function renameArea(id: string) {
+    if (!editingAreaLabel.trim()) return;
+    await fetch("/api/admin/destination-areas", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, label: editingAreaLabel, contact: editingAreaContact }) });
+    setEditingAreaId(null);
+    fetchAreas();
+  }
+
+  async function deleteArea(id: string) {
+    await fetch("/api/admin/destination-areas", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+    fetchAreas();
+  }
+
+  async function onAreaDrop(dropIdx: number) {
+    const fromIdx = dragAreaIdx.current;
+    if (fromIdx === null || fromIdx === dropIdx) { setDragOverAreaIdx(null); return; }
+    const reordered = [...localDestAreas];
+    const [moved] = reordered.splice(fromIdx, 1);
+    reordered.splice(dropIdx, 0, moved);
+    setLocalDestAreas(reordered);
+    setDragOverAreaIdx(null);
+    dragAreaIdx.current = null;
+    await fetch("/api/admin/destination-areas", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: reordered.map(a => a.id) }) });
+    invalidateAreasCache();
+  }
+
   const tabs: { key: Tab; label: string }[] = isAdmin
     ? [
         { key: "perfil", label: "Mi Perfil" },
         { key: "usuarios", label: "Usuarios" },
         { key: "categorias", label: "Categorías" },
         { key: "departamentos", label: "Departamentos" },
+        { key: "areas", label: "Áreas" },
       ]
     : [{ key: "perfil", label: "Mi Perfil" }];
 
@@ -409,7 +464,7 @@ export default function ProfilePage() {
                   className="w-full bg-[#162216] border border-[#1f3320] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[var(--brand)]/50 transition appearance-none"
                   style={{ color: me.notifyArea ? "white" : "#4b5563" }}>
                   <option value="">Sin área asignada (ver todo)</option>
-                  {DESTINATION_AREAS.map((d) => (
+                  {destAreas.map((d) => (
                     <option key={d.value} value={d.value} style={{ color: "white", background: "#162216" }}>{d.label} — {d.contact}</option>
                   ))}
                 </select>
@@ -686,7 +741,7 @@ export default function ProfilePage() {
                   className="bg-[#162216] border border-[#1f3320] rounded-full px-3 py-1 text-xs text-gray-300 font-semibold focus:outline-none focus:border-[var(--brand)]/50 transition max-w-[140px]"
                 >
                   <option value="" style={{ background: "#162216" }}>Sin área</option>
-                  {DESTINATION_AREAS.map(d => (
+                  {destAreas.map(d => (
                     <option key={d.value} value={d.value} style={{ background: "#162216", color: "white" }}>{d.label}</option>
                   ))}
                 </select>
@@ -867,6 +922,86 @@ export default function ProfilePage() {
               </li>
             ))}
             {departments.length === 0 && <p className="text-gray-600 text-sm text-center py-4">Sin departamentos registrados</p>}
+          </ul>
+        </div>
+      )}
+
+      {/* ── Áreas de Destino ── */}
+      {tab === "areas" && isAdmin && (
+        <div className="bg-[#0f1a0f] border border-[#1f3320] rounded-2xl p-6">
+          <h2 className="font-bold text-white mb-1">Áreas de Destino</h2>
+          <p className="text-xs text-gray-500 mb-6">Áreas que aparecen al crear registros y en filtros. Arrastra para reordenar.</p>
+
+          <div className="space-y-2 mb-6">
+            <div className="flex gap-2">
+              <input value={newAreaLabel} onChange={(e) => setNewAreaLabel(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && addArea()}
+                placeholder="Nombre del área (ej. YouTube)"
+                className="flex-1 bg-[#162216] border border-[#1f3320] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[var(--brand)]/50 transition" />
+              <button onClick={addArea}
+                className="bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-black font-black px-5 py-2.5 rounded-full text-sm transition-all shrink-0">
+                + Añadir
+              </button>
+            </div>
+            <input value={newAreaContact} onChange={(e) => setNewAreaContact(e.target.value)}
+              placeholder="Contacto responsable (opcional)"
+              className="w-full bg-[#162216] border border-[#1f3320] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[var(--brand)]/50 transition" />
+          </div>
+
+          {areaMsg && <p className="text-red-400 text-xs mb-4">{areaMsg}</p>}
+
+          <ul className="space-y-2">
+            {localDestAreas.map((a, idx) => (
+              <li key={a.id}
+                draggable
+                onDragStart={() => { dragAreaIdx.current = idx; }}
+                onDragOver={(e) => { e.preventDefault(); setDragOverAreaIdx(idx); }}
+                onDrop={() => onAreaDrop(idx)}
+                onDragEnd={() => setDragOverAreaIdx(null)}
+                className={`bg-[#162216] border rounded-xl px-4 py-3 cursor-grab transition-all ${dragOverAreaIdx === idx ? "border-[var(--brand)]/60 bg-[var(--brand)]/5" : "border-[#1f3320]"}`}>
+                {editingAreaId === a.id ? (
+                  <div className="space-y-2">
+                    <input autoFocus value={editingAreaLabel} onChange={(e) => setEditingAreaLabel(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") renameArea(a.id); if (e.key === "Escape") setEditingAreaId(null); }}
+                      className="w-full bg-[#0f1a0f] border border-[var(--brand)]/40 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none" />
+                    <input value={editingAreaContact} onChange={(e) => setEditingAreaContact(e.target.value)}
+                      placeholder="Contacto"
+                      className="w-full bg-[#0f1a0f] border border-[#1f3320] rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none" />
+                    <div className="flex gap-2">
+                      <button onClick={() => renameArea(a.id)}
+                        className="bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-black text-xs font-black px-3 py-1.5 rounded-full transition-all">
+                        Guardar
+                      </button>
+                      <button onClick={() => setEditingAreaId(null)}
+                        className="text-gray-500 hover:text-white text-xs px-2 py-1.5 transition-all">
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="text-gray-600 text-xs shrink-0">⠿</span>
+                      <div className="min-w-0">
+                        <p className="text-white text-sm font-semibold truncate">{a.label}</p>
+                        {a.contact && <p className="text-xs text-gray-500 truncate">{a.contact}</p>}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button onClick={() => { setEditingAreaId(a.id); setEditingAreaLabel(a.label); setEditingAreaContact(a.contact); }}
+                        className="text-gray-400 hover:text-white text-xs border border-[#1f3320] hover:border-[var(--brand)]/30 px-3 py-1 rounded-full transition-all font-semibold">
+                        Editar
+                      </button>
+                      <button onClick={() => deleteArea(a.id)}
+                        className="text-red-400 hover:text-red-300 text-xs border border-red-500/20 hover:border-red-500/40 px-3 py-1 rounded-full transition-all font-semibold">
+                        Eliminar
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </li>
+            ))}
+            {localDestAreas.length === 0 && <p className="text-gray-600 text-sm text-center py-4">Sin áreas registradas. Agrega la primera arriba.</p>}
           </ul>
         </div>
       )}

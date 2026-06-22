@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback, use } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { EVENT_TYPES, DESTINATION_AREAS } from "@/lib/constants";
+import { EVENT_TYPES } from "@/lib/constants";
+import { useDestinationAreas } from "@/lib/useDestinationAreas";
 
 interface Entry {
   id: string; driveLink: string; linkType: string; eventName: string;
@@ -39,6 +40,7 @@ export default function EntryDetailPage({ params }: { params: Promise<{ id: stri
   const [myProgress, setMyProgress] = useState<number>(0);
   const [settingStatus, setSettingStatus] = useState(false);
   const userId = (session?.user as { id?: string })?.id;
+  const { areas: destAreas, areaLabel, areaContact } = useDestinationAreas();
 
   const fetchEntry = useCallback(async () => {
     const [entryRes, notifRes] = await Promise.all([
@@ -193,15 +195,12 @@ export default function EntryDetailPage({ params }: { params: Promise<{ id: stri
             <div className="py-2.5 border-b border-[#1f3320]">
               <span className="text-xs text-gray-500 block mb-2">Áreas de destino</span>
               <div className="space-y-1.5">
-                {areas.map((area) => {
-                  const dest = DESTINATION_AREAS.find((d) => d.value === area);
-                  return (
-                    <div key={area} className="flex items-center justify-between">
-                      <span className="text-white font-semibold text-sm">{dest?.label ?? area}</span>
-                      <span className="text-gray-500 text-xs">{dest?.contact}</span>
-                    </div>
-                  );
-                })}
+                {areas.map((area) => (
+                  <div key={area} className="flex items-center justify-between">
+                    <span className="text-white font-semibold text-sm">{areaLabel(area)}</span>
+                    <span className="text-gray-500 text-xs">{areaContact(area)}</span>
+                  </div>
+                ))}
               </div>
             </div>
             {entry.notes && (

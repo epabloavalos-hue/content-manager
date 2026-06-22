@@ -1,4 +1,5 @@
-import { EVENT_TYPES, DESTINATION_AREAS, LINK_TYPES } from "@/lib/constants";
+import { EVENT_TYPES, LINK_TYPES } from "@/lib/constants";
+import { prisma } from "@/lib/prisma";
 
 interface EntryData {
   id: string;
@@ -17,10 +18,6 @@ function label<T extends { value: string; label: string }>(list: readonly T[], v
   return list.find((i) => i.value === value)?.label ?? value;
 }
 
-function contact(area: string) {
-  return DESTINATION_AREAS.find((d) => d.value === area)?.contact ?? "";
-}
-
 function formatDate(d: Date | string) {
   return new Date(d).toLocaleDateString("es-MX", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
 }
@@ -34,12 +31,15 @@ export async function notifyNewEntry(entry: EntryData): Promise<void> {
     return;
   }
 
+  const dbAreas = await prisma.appDestinationArea.findMany();
+  const areaLabel = (v: string) => dbAreas.find(a => a.value === v)?.label ?? v;
+  const areaContact = (v: string) => dbAreas.find(a => a.value === v)?.contact ?? "";
+
   const appUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
   const entryUrl = `${appUrl}/dashboard/entries/${entry.id}`;
   const areas = entry.destinationArea.split(",").filter(Boolean);
-  const areasText = areas
-    .map((a) => `  • ${label(DESTINATION_AREAS, a)} (${contact(a)})`)
-    .join("\n");
+  const areasText = areas.map((a) => `  • ${areaLabel(a)} (${areaContact(a)})`).join("\n");
+
   const text = [
     `📁 <b>Nuevo registro en el directorio</b>`,
     ``,
@@ -65,18 +65,9 @@ export async function notifyNewEntry(entry: EntryData): Promise<void> {
     const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: channelId,
-        text,
-        parse_mode: "HTML",
-        disable_web_page_preview: true,
-      }),
+      body: JSON.stringify({ chat_id: channelId, text, parse_mode: "HTML", disable_web_page_preview: true }),
     });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      console.error("Telegram error:", err);
-    }
+    if (!res.ok) console.error("Telegram error:", await res.json().catch(() => ({})));
   } catch (err) {
     console.error("Error enviando notificación Telegram:", err);
   }

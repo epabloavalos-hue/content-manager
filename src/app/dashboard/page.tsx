@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { EVENT_TYPES, DESTINATION_AREAS } from "@/lib/constants";
+import { EVENT_TYPES } from "@/lib/constants";
+import { useDestinationAreas } from "@/lib/useDestinationAreas";
 
 interface Entry {
   id: string;
@@ -18,16 +19,16 @@ interface Entry {
 }
 
 const eventTypeLabel = (v: string) => EVENT_TYPES.find((e) => e.value === v)?.label ?? v;
-const destinationLabel = (v: string) => {
-  const areas = v.split(",").filter(Boolean);
-  if (areas.length === 0) return "—";
-  if (areas.length === 1) return DESTINATION_AREAS.find((d) => d.value === areas[0])?.label ?? areas[0];
-  return areas.map((a) => DESTINATION_AREAS.find((d) => d.value === a)?.label ?? a).join(", ");
-};
 
 export default function DashboardPage() {
   const { data: session } = useSession();
   const role = (session?.user as { role?: string })?.role;
+  const { areas: destAreas, areaLabel: destLabel } = useDestinationAreas();
+  const destinationLabel = (v: string) => {
+    const parts = v.split(",").filter(Boolean);
+    if (parts.length === 0) return "—";
+    return parts.map(a => destLabel(a)).join(", ");
+  };
 
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -117,7 +118,7 @@ export default function DashboardPage() {
             className="bg-[#162216] border border-[#1f3320] text-sm text-white rounded-xl px-3 py-2.5 focus:outline-none focus:border-[var(--brand)] transition-colors"
           >
             <option value="ALL">Todas las áreas</option>
-            {DESTINATION_AREAS.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
+            {destAreas.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
           </select>
 
           <input

@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { DESTINATION_AREAS, EVENT_TYPES, DEPARTMENTS } from "@/lib/constants";
+import { EVENT_TYPES, DEPARTMENTS } from "@/lib/constants";
+import { useDestinationAreas } from "@/lib/useDestinationAreas";
 
 interface Entry {
   id: string;
@@ -56,8 +57,7 @@ export default function NotificationsPanel({ open, onClose, onCountChange, isAdm
   const [ackingId, setAckingId] = useState<string | null>(null);
   const [tab, setTab] = useState<"entries" | "pending">("entries");
 
-  const destLabel = (v: string) => DESTINATION_AREAS.find((d) => d.value === v)?.label ?? v;
-  const destContact = (v: string) => DESTINATION_AREAS.find((d) => d.value === v)?.contact ?? "";
+  const { areaLabel: destLabel, areaContact: destContact } = useDestinationAreas();
   const eventLabel = (v: string) => EVENT_TYPES.find((e) => e.value === v)?.label ?? v;
   const deptLabel = (v: string | null) => v ? (DEPARTMENTS.find((d) => d.value === v)?.label ?? v) : "—";
 
