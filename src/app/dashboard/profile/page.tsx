@@ -5,9 +5,8 @@ import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { DEPARTMENTS } from "@/lib/constants";
 import { useDestinationAreas, invalidateAreasCache, type DestinationArea } from "@/lib/useDestinationAreas";
-import { invalidateCategoriesCache } from "@/lib/useEventCategories";
 
-type Tab = "perfil" | "usuarios" | "categorias" | "areas";
+type Tab = "perfil" | "usuarios" | "areas";
 
 interface UserData {
   id: string; name: string; email: string; role: string; status: string;
@@ -15,7 +14,6 @@ interface UserData {
   createdAt: string;
 }
 
-interface Category { id: string; value: string; label: string; order: number }
 interface Dept { id: string; value: string; label: string; order: number }
 interface HistoryEntry {
   id: string;
@@ -64,15 +62,6 @@ export default function ProfilePage() {
   // — Users list
   const [users, setUsers] = useState<UserData[]>([]);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-
-  // — Categories
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [newCat, setNewCat] = useState("");
-  const [catMsg, setCatMsg] = useState("");
-  const [editingCatId, setEditingCatId] = useState<string | null>(null);
-  const [editingCatLabel, setEditingCatLabel] = useState("");
-  const dragCatIdx = useRef<number | null>(null);
-  const [dragOverCatIdx, setDragOverCatIdx] = useState<number | null>(null);
 
   // — Departments
   const [departments, setDepartments] = useState<Dept[]>([]);
@@ -123,10 +112,6 @@ export default function ProfilePage() {
     if (res.ok) setUsers(await res.json());
   }, []);
 
-  const fetchCategories = useCallback(async () => {
-    const res = await fetch("/api/admin/categories");
-    if (res.ok) { setCategories(await res.json()); invalidateCategoriesCache(); }
-  }, []);
 
   const fetchDepartments = useCallback(async () => {
     const res = await fetch("/api/admin/departments");
@@ -140,7 +125,6 @@ export default function ProfilePage() {
 
   useEffect(() => { fetchMe(); }, [fetchMe]);
   useEffect(() => { if (tab === "usuarios") fetchUsers(); }, [tab, fetchUsers]);
-  useEffect(() => { if (tab === "categorias") fetchCategories(); }, [tab, fetchCategories]);
   useEffect(() => { if (tab === "areas") fetchAreas(); }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { setLocalDestAreas(destAreas); }, [destAreas]);
 
@@ -228,50 +212,6 @@ export default function ProfilePage() {
     fetchUsers();
   }
 
-  async function addCategory() {
-    if (!newCat.trim()) return;
-    setCatMsg("");
-    const res = await fetch("/api/admin/categories", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ label: newCat }) });
-    const data = await res.json();
-    if (res.ok) { setNewCat(""); fetchCategories(); } else setCatMsg(data.error);
-  }
-
-  async function renameCategory(id: string) {
-    if (!editingCatLabel.trim()) return;
-    await fetch("/api/admin/categories", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, label: editingCatLabel }) });
-    setEditingCatId(null);
-    fetchCategories();
-  }
-
-  async function deleteCategory(id: string) {
-    await fetch("/api/admin/categories", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
-    fetchCategories();
-  }
-
-  function onCatDragStart(idx: number) {
-    dragCatIdx.current = idx;
-  }
-
-  function onCatDragOver(e: React.DragEvent, idx: number) {
-    e.preventDefault();
-    setDragOverCatIdx(idx);
-  }
-
-  async function onCatDrop(dropIdx: number) {
-    const fromIdx = dragCatIdx.current;
-    if (fromIdx === null || fromIdx === dropIdx) { setDragOverCatIdx(null); return; }
-    const reordered = [...categories];
-    const [moved] = reordered.splice(fromIdx, 1);
-    reordered.splice(dropIdx, 0, moved);
-    setCategories(reordered);
-    setDragOverCatIdx(null);
-    dragCatIdx.current = null;
-    await fetch("/api/admin/categories", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ids: reordered.map((c) => c.id) }),
-    });
-  }
 
   async function addDepartment() {
     if (!newDept.trim()) return;
@@ -336,7 +276,6 @@ export default function ProfilePage() {
     ? [
         { key: "perfil", label: "Mi Perfil" },
         { key: "usuarios", label: "Usuarios" },
-        { key: "categorias", label: "Categorías" },
         { key: "areas", label: "Áreas" },
       ]
     : [{ key: "perfil", label: "Mi Perfil" }];
@@ -778,88 +717,6 @@ export default function ProfilePage() {
       )}
 
       {/* ── CATEGORÍAS ── */}
-      {tab === "categorias" && isAdmin && (
-        <div className="bg-[#0f1a0f] border border-[#1f3320] rounded-2xl p-6">
-          <h2 className="font-bold text-white mb-1">Categorías de eventos</h2>
-          <p className="text-xs text-gray-500 mb-6">Estas categorías aparecen al crear o filtrar registros.</p>
-
-          <div className="flex gap-2 mb-6">
-            <input value={newCat} onChange={(e) => setNewCat(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && addCategory()}
-              placeholder="Ej. Talleres"
-              className="flex-1 bg-[#162216] border border-[#1f3320] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[var(--brand)]/50 transition" />
-            <button onClick={addCategory}
-              className="bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-black font-black px-5 py-2.5 rounded-full text-sm transition-all">
-              + Añadir
-            </button>
-          </div>
-
-          {catMsg && <p className="text-red-400 text-xs mb-4">{catMsg}</p>}
-
-          <ul className="space-y-2">
-            {categories.map((c, idx) => (
-              <li
-                key={c.id}
-                draggable
-                onDragStart={() => onCatDragStart(idx)}
-                onDragOver={(e) => onCatDragOver(e, idx)}
-                onDrop={() => onCatDrop(idx)}
-                onDragLeave={() => setDragOverCatIdx(null)}
-                className={`bg-[#162216] border rounded-xl px-4 py-3 transition-all ${
-                  dragOverCatIdx === idx ? "border-[var(--brand)]/60 bg-[#1a2e1a]" : "border-[#1f3320]"
-                }`}
-              >
-                {editingCatId === c.id ? (
-                  <div className="flex items-center gap-2">
-                    <input
-                      autoFocus
-                      value={editingCatLabel}
-                      onChange={(e) => setEditingCatLabel(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === "Enter") renameCategory(c.id); if (e.key === "Escape") setEditingCatId(null); }}
-                      className="flex-1 bg-[#0f1a0f] border border-[var(--brand)]/40 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none"
-                    />
-                    <button onClick={() => renameCategory(c.id)}
-                      className="bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-black text-xs font-black px-3 py-1.5 rounded-full transition-all">
-                      Guardar
-                    </button>
-                    <button onClick={() => setEditingCatId(null)}
-                      className="text-gray-500 hover:text-white text-xs px-2 py-1.5 transition-all">
-                      ✕
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      {/* drag handle */}
-                      <span className="text-gray-600 hover:text-gray-400 cursor-grab active:cursor-grabbing select-none shrink-0" title="Arrastar para reordenar">
-                        ⠿
-                      </span>
-                      <div>
-                        <p className="text-white text-sm font-semibold">{c.label}</p>
-                        <p className="text-[11px] text-gray-600 font-mono mt-0.5">{c.value}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        onClick={() => { setEditingCatId(c.id); setEditingCatLabel(c.label); }}
-                        className="text-gray-400 hover:text-white text-xs border border-[#1f3320] hover:border-[var(--brand)]/30 px-3 py-1 rounded-full transition-all font-semibold">
-                        Renombrar
-                      </button>
-                      <button onClick={() => deleteCategory(c.id)}
-                        className="text-red-400 hover:text-red-300 text-xs border border-red-500/20 hover:border-red-500/40 px-3 py-1 rounded-full transition-all font-semibold">
-                        Eliminar
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </li>
-            ))}
-            {categories.length === 0 && <p className="text-gray-600 text-sm text-center py-4">Sin categorías registradas</p>}
-          </ul>
-        </div>
-      )}
-
-      {/* ── DEPARTAMENTOS ── */}
       {/* ── Áreas de Destino ── */}
       {tab === "areas" && isAdmin && (
         <div className="bg-[#0f1a0f] border border-[#1f3320] rounded-2xl p-6">
