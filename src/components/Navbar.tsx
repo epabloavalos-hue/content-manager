@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import NotificationsPanel from "@/components/NotificationsPanel";
+import InstallButton from "@/components/InstallButton";
 
 interface NavbarProps {
   user: { name?: string; email?: string; role?: string };
@@ -80,8 +81,9 @@ export default function Navbar({ user }: NavbarProps) {
             </nav>
           </div>
 
-          {/* Right side: bell + user + logout */}
+          {/* Right side: install + bell + user + logout */}
           <div className="flex items-center gap-2">
+            <InstallButton />
             {/* Notification bell */}
             <button
               onClick={() => setPanelOpen(true)}

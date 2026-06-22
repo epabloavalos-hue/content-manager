@@ -12,6 +12,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Gestor de Contenido · Jorge Serratos",
   description: "Directorio de archivos y contenido digital",
+  manifest: "/manifest.json",
+  themeColor: "#4ade80",
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Contenido JS" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
