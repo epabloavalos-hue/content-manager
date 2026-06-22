@@ -6,7 +6,7 @@ import Image from "next/image";
 import { DEPARTMENTS } from "@/lib/constants";
 import { useDestinationAreas, invalidateAreasCache, type DestinationArea } from "@/lib/useDestinationAreas";
 
-type Tab = "perfil" | "usuarios" | "categorias" | "departamentos" | "areas";
+type Tab = "perfil" | "usuarios" | "categorias" | "areas";
 
 interface UserData {
   id: string; name: string; email: string; role: string; status: string;
@@ -140,7 +140,6 @@ export default function ProfilePage() {
   useEffect(() => { fetchMe(); }, [fetchMe]);
   useEffect(() => { if (tab === "usuarios") fetchUsers(); }, [tab, fetchUsers]);
   useEffect(() => { if (tab === "categorias") fetchCategories(); }, [tab, fetchCategories]);
-  useEffect(() => { if (tab === "departamentos") fetchDepartments(); }, [tab, fetchDepartments]);
   useEffect(() => { if (tab === "areas") fetchAreas(); }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { setLocalDestAreas(destAreas); }, [destAreas]);
 
@@ -337,7 +336,6 @@ export default function ProfilePage() {
         { key: "perfil", label: "Mi Perfil" },
         { key: "usuarios", label: "Usuarios" },
         { key: "categorias", label: "Categorías" },
-        { key: "departamentos", label: "Departamentos" },
         { key: "areas", label: "Áreas" },
       ]
     : [{ key: "perfil", label: "Mi Perfil" }];
@@ -861,71 +859,6 @@ export default function ProfilePage() {
       )}
 
       {/* ── DEPARTAMENTOS ── */}
-      {tab === "departamentos" && isAdmin && (
-        <div className="bg-[#0f1a0f] border border-[#1f3320] rounded-2xl p-6">
-          <h2 className="font-bold text-white mb-1">Departamentos</h2>
-          <p className="text-xs text-gray-500 mb-6">Áreas que aparecen en el perfil de los usuarios al registrarse.</p>
-
-          <div className="flex gap-2 mb-6">
-            <input value={newDept} onChange={(e) => setNewDept(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && addDepartment()}
-              placeholder="Ej. Producción"
-              className="flex-1 bg-[#162216] border border-[#1f3320] rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[var(--brand)]/50 transition" />
-            <button onClick={addDepartment}
-              className="bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-black font-black px-5 py-2.5 rounded-full text-sm transition-all">
-              + Añadir
-            </button>
-          </div>
-
-          {deptMsg && <p className="text-red-400 text-xs mb-4">{deptMsg}</p>}
-
-          <ul className="space-y-2">
-            {departments.map((d) => (
-              <li key={d.id} className="bg-[#162216] border border-[#1f3320] rounded-xl px-4 py-3">
-                {editingDeptId === d.id ? (
-                  <div className="flex items-center gap-2">
-                    <input
-                      autoFocus
-                      value={editingDeptLabel}
-                      onChange={(e) => setEditingDeptLabel(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === "Enter") renameDepartment(d.id); if (e.key === "Escape") setEditingDeptId(null); }}
-                      className="flex-1 bg-[#0f1a0f] border border-[var(--brand)]/40 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none"
-                    />
-                    <button onClick={() => renameDepartment(d.id)}
-                      className="bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-black text-xs font-black px-3 py-1.5 rounded-full transition-all">
-                      Guardar
-                    </button>
-                    <button onClick={() => setEditingDeptId(null)}
-                      className="text-gray-500 hover:text-white text-xs px-2 py-1.5 transition-all">
-                      ✕
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-white text-sm font-semibold">{d.label}</p>
-                      <p className="text-[11px] text-gray-600 font-mono mt-0.5">{d.value}</p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        onClick={() => { setEditingDeptId(d.id); setEditingDeptLabel(d.label); }}
-                        className="text-gray-400 hover:text-white text-xs border border-[#1f3320] hover:border-[var(--brand)]/30 px-3 py-1 rounded-full transition-all font-semibold">
-                        Renombrar
-                      </button>
-                      <button onClick={() => deleteDepartment(d.id)}
-                        className="text-red-400 hover:text-red-300 text-xs border border-red-500/20 hover:border-red-500/40 px-3 py-1 rounded-full transition-all font-semibold">
-                        Eliminar
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </li>
-            ))}
-            {departments.length === 0 && <p className="text-gray-600 text-sm text-center py-4">Sin departamentos registrados</p>}
-          </ul>
-        </div>
-      )}
-
       {/* ── Áreas de Destino ── */}
       {tab === "areas" && isAdmin && (
         <div className="bg-[#0f1a0f] border border-[#1f3320] rounded-2xl p-6">
