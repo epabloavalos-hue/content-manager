@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     ];
   }
   if (eventType) where.eventType = eventType;
-  if (destinationArea) where.destinationArea = destinationArea;
+  if (destinationArea) where.destinationArea = { contains: destinationArea };
   if (dateFrom || dateTo) {
     where.recordingDate = {
       ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
