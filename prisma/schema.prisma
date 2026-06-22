@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String             @id @default(cuid())
+  name             String
+  email            String             @unique
+  password         String
+  role             String             @default("VIEWER")
+  status           String             @default("APPROVED")
+  position         String?
+  department       String?
+  phone            String?
+  avatarPath       String?
+  notifyArea       String?
+  themeAccent      String?
+  themeBg          String?
+  themeBgImage     String?
+  themeAnimation   String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  entries          Entry[]
+  acknowledgments  Acknowledgment[]
+  assignments      EntryAssignment[]
+  entryStatuses    EntryUserStatus[]
+}
+
+model Entry {
+  id                 String             @id @default(cuid())
+  driveLink          String
+  linkType           String
+  eventName          String
+  eventType          String
+  recordingDate      DateTime
+  contentResponsible String
+  destinationArea    String
+  proofImagePath     String?
+  notes              String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  createdById        String
+  createdBy          User               @relation(fields: [createdById], references: [id])
+  acknowledgments    Acknowledgment[]
+  assignments        EntryAssignment[]
+  userStatuses       EntryUserStatus[]
+}
+
+// status values: "EN_EDICION" | "EDITADO"
+model EntryUserStatus {
+  id           String   @id @default(cuid())
+  entryId      String
+  userId       String
+  status       String
+  editProgress Int      @default(0)
+  updatedAt    DateTime @updatedAt
+  entry        Entry    @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([entryId, userId])
+}
+
+model EntryAssignment {
+  id        String   @id @default(cuid())
+  entryId   String
+  userId    String
+  createdAt DateTime @default(now())
+  entry     Entry    @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([entryId, userId])
+}
+
+model Acknowledgment {
+  id        String   @id @default(cuid())
+  entryId   String
+  userId    String
+  createdAt DateTime @default(now())
+  entry     Entry    @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([entryId, userId])
+}
+
+model VerificationCode {
+  id        String   @id @default(cuid())
+  email     String
+  code      String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model EventCategory {
+  id    String @id @default(cuid())
+  value String @unique
+  label String
+  order Int    @default(0)
+}
+
+model AppDepartment {
+  id    String @id @default(cuid())
+  value String @unique
+  label String
+  order Int    @default(0)
+}
