@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
   const entries = await prisma.entry.findMany({
     where,
     include: { createdBy: { select: { name: true } } },
-    orderBy: { recordingDate: "desc" },
+    orderBy: { createdAt: "desc" },
   });
 
   return NextResponse.json(entries);
