@@ -29,7 +29,11 @@ export default function NewEntryPage() {
   useEffect(() => {
     fetch("/api/users")
       .then((r) => r.json())
-      .then((data: User[]) => setUsers(data.filter((u) => (u as unknown as { role: string }).role !== "ADMIN")))
+      .then((data: User[]) => {
+        const filtered = data.filter((u) => (u as unknown as { role: string }).role !== "ADMIN");
+        setUsers(filtered);
+        setAssignedUserIds(filtered.map((u) => u.id));
+      })
       .catch(() => {});
   }, []);
 
