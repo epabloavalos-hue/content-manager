@@ -69,26 +69,31 @@ export default function InstallButton() {
         {showIOSGuide && (
           <>
             <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm" onClick={() => setShowIOSGuide(false)} />
-            <div className="fixed bottom-6 left-4 right-4 z-50 bg-[#0f1a0f] border border-[#1f3320] rounded-2xl p-5 shadow-2xl max-w-sm mx-auto">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-white font-black text-base">Instalar app</h3>
-                <button onClick={() => setShowIOSGuide(false)} className="text-gray-500 hover:text-white w-7 h-7 flex items-center justify-center rounded-full border border-[#1f3320] text-sm transition-colors">✕</button>
+            <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-50 bg-[#0f1a0f] border border-[#1f3320] rounded-2xl p-5 shadow-2xl max-w-sm mx-auto">
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h3 className="text-white font-black text-lg">Instalar app</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">Sigue estos 3 pasos en Safari</p>
+                </div>
+                <button onClick={() => setShowIOSGuide(false)} className="text-gray-500 hover:text-white w-8 h-8 flex items-center justify-center rounded-full border border-[#1f3320] text-sm transition-colors shrink-0">✕</button>
               </div>
-              <ol className="space-y-3 text-sm text-gray-300">
-                <li className="flex items-start gap-3">
-                  <span className="shrink-0 w-6 h-6 rounded-full bg-[var(--brand)] text-black text-xs font-black flex items-center justify-center mt-0.5">1</span>
-                  <span>Toca el botón de <strong className="text-white">Compartir</strong> en Safari <span className="text-lg">⎙</span> (barra inferior del navegador)</span>
+              <ol className="space-y-4">
+                <li className="flex items-center gap-3 bg-[#162216] border border-[#1f3320] rounded-xl px-4 py-3">
+                  <span className="shrink-0 w-7 h-7 rounded-full bg-[var(--brand)] text-black text-sm font-black flex items-center justify-center">1</span>
+                  <span className="text-sm text-gray-300">Toca <strong className="text-white">Compartir</strong> <span className="text-base">⎙</span> abajo en Safari</span>
                 </li>
-                <li className="flex items-start gap-3">
-                  <span className="shrink-0 w-6 h-6 rounded-full bg-[var(--brand)] text-black text-xs font-black flex items-center justify-center mt-0.5">2</span>
-                  <span>Desplázate y toca <strong className="text-white">"Agregar a pantalla de inicio"</strong></span>
+                <li className="flex items-center gap-3 bg-[#162216] border border-[#1f3320] rounded-xl px-4 py-3">
+                  <span className="shrink-0 w-7 h-7 rounded-full bg-[var(--brand)] text-black text-sm font-black flex items-center justify-center">2</span>
+                  <span className="text-sm text-gray-300">Elige <strong className="text-white">"Agregar a inicio"</strong></span>
                 </li>
-                <li className="flex items-start gap-3">
-                  <span className="shrink-0 w-6 h-6 rounded-full bg-[var(--brand)] text-black text-xs font-black flex items-center justify-center mt-0.5">3</span>
-                  <span>Toca <strong className="text-white">"Agregar"</strong> en la esquina superior derecha</span>
+                <li className="flex items-center gap-3 bg-[#162216] border border-[#1f3320] rounded-xl px-4 py-3">
+                  <span className="shrink-0 w-7 h-7 rounded-full bg-[var(--brand)] text-black text-sm font-black flex items-center justify-center">3</span>
+                  <span className="text-sm text-gray-300">Toca <strong className="text-white">"Agregar"</strong> arriba a la derecha</span>
                 </li>
               </ol>
-              <p className="text-xs text-gray-600 mt-4 text-center">Solo funciona desde Safari en iPhone/iPad</p>
+              <button onClick={() => setShowIOSGuide(false)} className="w-full mt-5 bg-[var(--brand)] text-black font-black py-2.5 rounded-full text-sm">
+                Entendido
+              </button>
             </div>
           </>
         )}
