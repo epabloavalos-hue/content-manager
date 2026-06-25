@@ -126,12 +126,14 @@ export default function DashboardPage() {
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
             className="bg-[#162216] border border-[#1f3320] text-sm text-white rounded-xl px-3 py-2.5 focus:outline-none focus:border-[var(--brand)] transition-colors"
+            style={{ colorScheme: "dark" }}
           />
           <input
             type="date"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
             className="bg-[#162216] border border-[#1f3320] text-sm text-white rounded-xl px-3 py-2.5 focus:outline-none focus:border-[var(--brand)] transition-colors"
+            style={{ colorScheme: "dark" }}
           />
         </div>
       </div>

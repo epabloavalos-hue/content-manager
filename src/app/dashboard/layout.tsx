@@ -28,7 +28,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <ThemeWrapper initial={initial} />
       <div className="relative flex flex-col min-h-screen" style={{ zIndex: 10 }}>
         <Navbar user={session.user as { name?: string; email?: string; role?: string }} />
-        <main className="flex-1 container mx-auto px-4 py-6 max-w-7xl">
+        <main className="flex-1 container mx-auto px-4 py-6 max-w-7xl pb-24 sm:pb-6">
           {children}
         </main>
       </div>
