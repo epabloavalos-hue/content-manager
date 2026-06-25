@@ -54,6 +54,17 @@ export default function Navbar({ user }: NavbarProps) {
                 Directorio
               </Link>
 
+              <Link
+                href="/dashboard/carpetas-importantes"
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                  pathname.startsWith("/dashboard/carpetas-importantes")
+                    ? "bg-[var(--brand)]/10 text-[var(--brand)] border border-[var(--brand)]/30"
+                    : "text-gray-400 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                Carpetas Importantes
+              </Link>
+
               {isAdmin && (
                 <Link
                   href="/dashboard/admin/users"

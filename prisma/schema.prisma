@@ -117,3 +117,14 @@ model AppDestinationArea {
   contact String @default("")
   order   Int    @default(0)
 }
+
+model ImportantFolder {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  driveLink   String
+  color       String   @default("#22c55e")
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
