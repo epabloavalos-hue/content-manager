@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
+import { put } from "@vercel/blob";
 
 export async function POST(
   req: NextRequest,
@@ -25,14 +24,9 @@ export async function POST(
     return NextResponse.json({ error: "Solo JPG o PNG" }, { status: 400 });
   }
 
-  const uploadDir = join(process.cwd(), "public", "uploads");
-  await mkdir(uploadDir, { recursive: true });
-
-  const filename = `proof_${id}_${Date.now()}.${ext}`;
-  const buffer = Buffer.from(await file.arrayBuffer());
-  await writeFile(join(uploadDir, filename), buffer);
-
-  const proofImagePath = `/uploads/${filename}`;
+  const filename = `proof/proof_${id}_${Date.now()}.${ext}`;
+  const blob = await put(filename, file, { access: "public", addRandomSuffix: false });
+  const proofImagePath = blob.url;
   await prisma.entry.update({ where: { id }, data: { proofImagePath } });
 
   return NextResponse.json({ proofImagePath });

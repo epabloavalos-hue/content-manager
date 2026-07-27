@@ -7,10 +7,13 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
-    "db:seed": "npx tsx prisma/seed.ts"
+    "postinstall": "prisma generate",
+    "db:seed": "npx tsx prisma/seed.ts",
+    "db:export": "tsx scripts/export-sqlite-data.ts",
+    "db:import": "tsx scripts/import-data.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
@@ -19,6 +22,7 @@
     "@base-ui/react": "^1.5.0",
     "@prisma/client": "^5.22.0",
     "@types/nodemailer": "^8.0.1",
+    "@vercel/blob": "^2.6.1",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
-
-const DATA_DIR = process.env.DATA_DIR ?? path.join(process.cwd(), "public");
+import { put } from "@vercel/blob";
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -19,16 +16,9 @@ export async function POST(req: Request) {
   const mimeExt: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
   const ext = mimeExt[file.type] ?? "jpg";
 
-  const dir = path.join(DATA_DIR, "user-bg");
-  await mkdir(dir, { recursive: true });
-
-  const filename = `${userId}.${ext}`;
-  await writeFile(path.join(dir, filename), Buffer.from(await file.arrayBuffer()));
-
-  const useApiRoute = !!process.env.DATA_DIR;
-  const themeBgImage = useApiRoute
-    ? `/api/file/user-bg/${filename}?t=${Date.now()}`
-    : `/user-bg/${filename}?t=${Date.now()}`;
+  const filename = `user-bg/${userId}.${ext}`;
+  const blob = await put(filename, file, { access: "public", addRandomSuffix: false });
+  const themeBgImage = `${blob.url}?t=${Date.now()}`;
 
   await prisma.user.update({ where: { id: userId }, data: { themeBgImage, themeBg: "image" } });
 

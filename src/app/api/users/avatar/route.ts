@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
-
-const DATA_DIR = process.env.DATA_DIR ?? path.join(process.cwd(), "public");
+import { put } from "@vercel/blob";
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -32,14 +29,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "El archivo no puede pesar más de 5 MB" }, { status: 400 });
   }
 
-  const dir = path.join(DATA_DIR, "avatars");
-  await mkdir(dir, { recursive: true });
-
-  const filename = `${targetId}.${ext}`;
-  await writeFile(path.join(dir, filename), Buffer.from(await file.arrayBuffer()));
-
-  const useApiRoute = !!process.env.DATA_DIR;
-  const avatarPath = useApiRoute ? `/api/file/avatars/${filename}` : `/avatars/${filename}`;
+  const filename = `avatars/${targetId}.${ext}`;
+  const blob = await put(filename, file, { access: "public", addRandomSuffix: false });
+  const avatarPath = blob.url;
   await prisma.user.update({ where: { id: targetId }, data: { avatarPath } });
 
   return NextResponse.json({ avatarPath });
