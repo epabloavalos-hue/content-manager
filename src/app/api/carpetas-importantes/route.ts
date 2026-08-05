@@ -19,13 +19,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { name, description, driveLink, color } = await req.json();
+  const { name, description, driveLink, color, section } = await req.json();
   if (!name || !driveLink) {
     return NextResponse.json({ error: "name y driveLink son requeridos" }, { status: 400 });
   }
 
   const folder = await prisma.importantFolder.create({
-    data: { name, description: description || null, driveLink, color: color || "#22c55e" },
+    data: {
+      name,
+      description: description || null,
+      driveLink,
+      color: color || "#22c55e",
+      section: section === "PODCAST" ? "PODCAST" : "CARPETAS",
+    },
   });
   return NextResponse.json(folder, { status: 201 });
 }

@@ -118,12 +118,14 @@ model AppDestinationArea {
   order   Int    @default(0)
 }
 
+// section values: "CARPETAS" | "PODCAST"
 model ImportantFolder {
   id          String   @id @default(cuid())
   name        String
   description String?
   driveLink   String
   color       String   @default("#22c55e")
+  section     String   @default("CARPETAS")
   order       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

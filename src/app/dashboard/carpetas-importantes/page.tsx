@@ -3,12 +3,15 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 
+type Section = "CARPETAS" | "PODCAST";
+
 interface Folder {
   id: string;
   name: string;
   description: string | null;
   driveLink: string;
   color: string;
+  section: Section;
 }
 
 const PRESET_COLORS = [
@@ -22,6 +25,8 @@ const PRESET_COLORS = [
   { hex: "#ec4899", label: "Rosa" },
 ];
 
+const EMPTY_FORM = { name: "", description: "", driveLink: "", color: "#22c55e" };
+
 export default function CarpetasImportantesPage() {
   const { data: session } = useSession();
   const role = (session?.user as { role?: string })?.role;
@@ -30,14 +35,14 @@ export default function CarpetasImportantesPage() {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Modal crear
-  const [modalOpen, setModalOpen] = useState(false);
+  // Modal crear (recuerda a qué sección pertenece)
+  const [createSection, setCreateSection] = useState<Section | null>(null);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ name: "", description: "", driveLink: "", color: "#22c55e" });
+  const [form, setForm] = useState(EMPTY_FORM);
 
   // Modal editar
   const [editFolder, setEditFolder] = useState<Folder | null>(null);
-  const [editForm, setEditForm] = useState({ name: "", description: "", driveLink: "", color: "#22c55e" });
+  const [editForm, setEditForm] = useState(EMPTY_FORM);
   const [editSaving, setEditSaving] = useState(false);
 
   // Confirm delete
@@ -54,14 +59,15 @@ export default function CarpetasImportantesPage() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
+    if (!createSection) return;
     setSaving(true);
     await fetch("/api/carpetas-importantes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, section: createSection }),
     });
-    setModalOpen(false);
-    setForm({ name: "", description: "", driveLink: "", color: "#22c55e" });
+    setCreateSection(null);
+    setForm(EMPTY_FORM);
     await fetchFolders();
     setSaving(false);
   }
@@ -94,68 +100,44 @@ export default function CarpetasImportantesPage() {
     setDeleting(false);
   }
 
+  const carpetas = folders.filter((f) => f.section !== "PODCAST");
+  const podcast = folders.filter((f) => f.section === "PODCAST");
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-black text-white tracking-tight">
-            Carpetas <span className="text-[var(--brand)]">Importantes</span>
-          </h1>
-          <p className="text-gray-500 text-sm mt-0.5">
-            Acceso rápido a las carpetas de Drive del equipo
-          </p>
-        </div>
-        {isAdmin && (
-          <button
-            onClick={() => setModalOpen(true)}
-            className="bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-black font-bold text-sm px-5 py-2.5 rounded-full transition-colors"
-          >
-            + Crear Casilla
-          </button>
-        )}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-10 divide-y divide-white/5 lg:divide-y-0 lg:divide-x">
+        <FolderSection
+          title={<>Carpetas <span className="text-[var(--brand)]">Importantes</span></>}
+          subtitle="Acceso rápido a las carpetas de Drive del equipo"
+          folders={carpetas}
+          isAdmin={isAdmin}
+          loading={loading}
+          onCreate={() => setCreateSection("CARPETAS")}
+          onEdit={openEdit}
+          onDelete={setDeleteTarget}
+        />
+        <FolderSection
+          title={<>Podcast <span className="text-[var(--brand)]">para clipeo</span></>}
+          subtitle="Acceso rápido a los episodios listos para clipear"
+          folders={podcast}
+          isAdmin={isAdmin}
+          loading={loading}
+          onCreate={() => setCreateSection("PODCAST")}
+          onEdit={openEdit}
+          onDelete={setDeleteTarget}
+          className="lg:pl-10"
+        />
       </div>
 
-      {/* Grid */}
-      {loading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-40 rounded-2xl bg-white/5 animate-pulse" />
-          ))}
-        </div>
-      ) : folders.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
-            </svg>
-          </div>
-          <p className="text-gray-400 font-semibold">Sin carpetas aún</p>
-          {isAdmin && <p className="text-gray-600 text-sm mt-1">Usa "Crear Casilla" para añadir la primera</p>}
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {folders.map((folder) => (
-            <FolderCard
-              key={folder.id}
-              folder={folder}
-              isAdmin={isAdmin}
-              onEdit={() => openEdit(folder)}
-              onDelete={() => setDeleteTarget(folder)}
-            />
-          ))}
-        </div>
-      )}
-
       {/* Modal Crear Casilla */}
-      {modalOpen && (
+      {createSection && (
         <FolderModal
-          title="Crear Casilla"
+          title={createSection === "PODCAST" ? "Crear Casilla — Podcast para clipeo" : "Crear Casilla — Carpetas Importantes"}
           form={form}
           setForm={setForm}
           saving={saving}
           onSubmit={handleCreate}
-          onClose={() => setModalOpen(false)}
+          onClose={() => setCreateSection(null)}
         />
       )}
 
@@ -195,6 +177,77 @@ export default function CarpetasImportantesPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FolderSection({
+  title,
+  subtitle,
+  folders,
+  isAdmin,
+  loading,
+  onCreate,
+  onEdit,
+  onDelete,
+  className = "",
+}: {
+  title: React.ReactNode;
+  subtitle: string;
+  folders: Folder[];
+  isAdmin: boolean;
+  loading: boolean;
+  onCreate: () => void;
+  onEdit: (folder: Folder) => void;
+  onDelete: (folder: Folder) => void;
+  className?: string;
+}) {
+  return (
+    <div className={`space-y-6 ${className}`}>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-black text-white tracking-tight">{title}</h1>
+          <p className="text-gray-500 text-sm mt-0.5">{subtitle}</p>
+        </div>
+        {isAdmin && (
+          <button
+            onClick={onCreate}
+            className="shrink-0 bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-black font-bold text-sm px-5 py-2.5 rounded-full transition-colors"
+          >
+            + Crear Casilla
+          </button>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-40 rounded-2xl bg-white/5 animate-pulse" />
+          ))}
+        </div>
+      ) : folders.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+            </svg>
+          </div>
+          <p className="text-gray-400 font-semibold">Sin carpetas aún</p>
+          {isAdmin && <p className="text-gray-600 text-sm mt-1">Usa "Crear Casilla" para añadir la primera</p>}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          {folders.map((folder) => (
+            <FolderCard
+              key={folder.id}
+              folder={folder}
+              isAdmin={isAdmin}
+              onEdit={() => onEdit(folder)}
+              onDelete={() => onDelete(folder)}
+            />
+          ))}
         </div>
       )}
     </div>
