@@ -3,7 +3,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 
-interface User { id: string; name: string; email: string; role: string; createdAt: string; }
+interface User { id: string; name: string; email: string; role: string; status: string; position: string | null; department: string | null; phone: string | null; createdAt: string; }
+
+const statusBadge = (s: string) =>
+  s === "PENDING"
+    ? <span className="text-xs font-semibold text-yellow-400 border border-yellow-500/30 bg-yellow-500/10 px-2.5 py-1 rounded-full">Pendiente</span>
+    : <span className="text-xs font-semibold text-green-400 border border-green-500/30 bg-green-500/10 px-2.5 py-1 rounded-full">Aprobado</span>;
 
 const roleBadge = (r: string) => {
   if (r === "ADMIN") return <span className="text-xs font-semibold text-black bg-[var(--brand)] px-2.5 py-1 rounded-full">Administrador</span>;
@@ -26,6 +31,8 @@ export default function UsersAdminPage() {
   const [newError, setNewError] = useState(""); const [newSaving, setNewSaving] = useState(false);
   const [editUser, setEditUser] = useState<User | null>(null);
   const [editName, setEditName] = useState(""); const [editRole, setEditRole] = useState("");
+  const [editStatus, setEditStatus] = useState(""); const [editPosition, setEditPosition] = useState("");
+  const [editDepartment, setEditDepartment] = useState(""); const [editPhone, setEditPhone] = useState("");
   const [editPassword, setEditPassword] = useState(""); const [editSaving, setEditSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -48,11 +55,18 @@ export default function UsersAdminPage() {
     setNewOpen(false); setNewSaving(false);
   }
 
-  function openEdit(u: User) { setEditUser(u); setEditName(u.name); setEditRole(u.role); setEditPassword(""); }
+  function openEdit(u: User) {
+    setEditUser(u); setEditName(u.name); setEditRole(u.role); setEditStatus(u.status);
+    setEditPosition(u.position || ""); setEditDepartment(u.department || ""); setEditPhone(u.phone || "");
+    setEditPassword("");
+  }
 
   async function saveEdit() {
     if (!editUser) return; setEditSaving(true);
-    const body: Record<string, string> = { name: editName, role: editRole };
+    const body: Record<string, string> = {
+      name: editName, role: editRole, status: editStatus,
+      position: editPosition, department: editDepartment, phone: editPhone,
+    };
     if (editPassword) body.password = editPassword;
     await fetch(`/api/users/${editUser.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     await fetchUsers(); setEditUser(null); setEditSaving(false);
@@ -88,7 +102,7 @@ export default function UsersAdminPage() {
             <table className="w-full text-sm">
               <thead className="border-b border-[#1f3320]">
                 <tr>
-                  {["Nombre", "Correo", "Rol", "Alta", ""].map((h) => (
+                  {["Nombre", "Correo", "Rol", "Estado", "Alta", ""].map((h) => (
                     <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
                   ))}
                 </tr>
@@ -99,6 +113,7 @@ export default function UsersAdminPage() {
                     <td className="px-4 py-3.5 font-semibold text-white">{u.name}</td>
                     <td className="px-4 py-3.5 text-gray-400 text-xs">{u.email}</td>
                     <td className="px-4 py-3.5">{roleBadge(u.role)}</td>
+                    <td className="px-4 py-3.5">{statusBadge(u.status)}</td>
                     <td className="px-4 py-3.5 text-gray-500 text-xs">{new Date(u.createdAt).toLocaleDateString("es-MX")}</td>
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-2 justify-end">
@@ -178,12 +193,25 @@ export default function UsersAdminPage() {
             <div className="space-y-4">
               <div><label className={labelCls}>Nombre</label>
                 <input value={editName} onChange={(e) => setEditName(e.target.value)} className={inputCls} /></div>
-              <div><label className={labelCls}>Rol</label>
-                <select value={editRole} onChange={(e) => setEditRole(e.target.value)} className={selectCls}>
-                  <option value="VIEWER">Usuario</option>
-                  <option value="EDITOR">Editor</option>
-                  <option value="ADMIN">Administrador</option>
-                </select></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><label className={labelCls}>Rol</label>
+                  <select value={editRole} onChange={(e) => setEditRole(e.target.value)} className={selectCls}>
+                    <option value="VIEWER">Usuario</option>
+                    <option value="EDITOR">Editor</option>
+                    <option value="ADMIN">Administrador</option>
+                  </select></div>
+                <div><label className={labelCls}>Estado</label>
+                  <select value={editStatus} onChange={(e) => setEditStatus(e.target.value)} className={selectCls}>
+                    <option value="APPROVED">Aprobado</option>
+                    <option value="PENDING">Pendiente</option>
+                  </select></div>
+              </div>
+              <div><label className={labelCls}>Puesto</label>
+                <input value={editPosition} onChange={(e) => setEditPosition(e.target.value)} className={inputCls} /></div>
+              <div><label className={labelCls}>Departamento</label>
+                <input value={editDepartment} onChange={(e) => setEditDepartment(e.target.value)} className={inputCls} /></div>
+              <div><label className={labelCls}>Teléfono</label>
+                <input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} className={inputCls} /></div>
               <div><label className={labelCls}>Nueva contraseña (opcional)</label>
                 <input type="password" placeholder="Dejar vacío para no cambiar" value={editPassword}
                   onChange={(e) => setEditPassword(e.target.value)} className={inputCls} /></div>
